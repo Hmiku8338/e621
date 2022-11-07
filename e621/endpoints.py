@@ -114,11 +114,11 @@ class BaseEndpoint(Generic[Model]):
         if ignore_pagination:
             if limit is None:
                 raise ValueError("limit is required when ignore_pagination is True")
-            return self._model.from_list(
-                self._api.session.paginated_get(self._url, params, self._root_entity_name), self._api
-            )
+            resp = self._api.session.paginated_get(self._url, params, self._root_entity_name)
+            return self._model.from_list(resp, self._api, ignore_errors=True)
         else:
-            return self._model.from_response(self._api.session.get(self._url, params=params), self._api, expect=list)
+            resp = self._api.session.get(self._url, params=params)
+            return self._model.from_response(resp, self._api, expect=list)
 
     def _default_create(self, params: Dict[str, Any], files: Optional[Dict[str, Any]] = None) -> Model:
         return self._model.from_response(self._api.session.post(self._url, params=params, files=files), self._api)
@@ -133,19 +133,21 @@ class BaseEndpoint(Generic[Model]):
         """A default search that automatically generates search params from self.search definition"""
         *args, limit, page, ignore_pagination = raw_args
         return self._magical_method(
-            self.search, self._default_search, _param_prefix, (), (limit, page, ignore_pagination), args
+            getattr(self, "search"), self._default_search, _param_prefix, (), (limit, page, ignore_pagination), args
         )
 
     def _magical_create(self, *args: Any, _param_prefix=None) -> Model:
         """A default create that automatically generates create params from self.create definition"""
         if _param_prefix is None:
             _param_prefix = self._model_snake_case_name
-        return self._magical_method(self.create, self._default_create, _param_prefix, (), (), args)
+        return self._magical_method(getattr(self, "create"), self._default_create, _param_prefix, (), (), args)
 
     def _magical_update(self, identifier: Union[str, int], *args: Any, _param_prefix=None) -> Model:
         if _param_prefix is None:
             _param_prefix = self._model_snake_case_name
-        return self._magical_method(self.update, self._default_update, _param_prefix, (identifier,), (), args, 1)
+        return self._magical_method(
+            getattr(self, "update"), self._default_update, _param_prefix, (identifier,), (), args, 1
+        )
 
     def _magical_method(
         self,
@@ -166,8 +168,8 @@ class BaseEndpoint(Generic[Model]):
 
 
 class EmptySearcher(BaseEndpoint[Model]):
-    _model = BaseModel
-
+    _model = BaseModel # type: ignore
+    
     def search(self, limit: Optional[int] = None, page: int = 1, ignore_pagination: bool = False) -> List[Model]:
         return self._default_search({}, limit, page, ignore_pagination)
 

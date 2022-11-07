@@ -16,11 +16,18 @@ class BaseModel(pydantic.BaseModel):
         e621api: Any
 
     class Config:
-        keep_untouched = (cached_property,)  # type: ignore
+        keep_untouched = (cached_property,)
 
     @classmethod
-    def from_list(cls, list: List[Dict[str, Any]], api: "E621") -> List[Self]:
-        return [cls(**obj, e621api=api) for obj in list]
+    def from_list(cls, list: List[Dict[str, Any]], api: "E621", ignore_errors: bool = False) -> List[Self]:
+        return_value: List[Self] = []
+        for obj in list:
+            try:
+                return_value.append(cls(**obj, e621api=api))
+            except pydantic.ValidationError:
+                if not ignore_errors:
+                    raise
+        return return_value
 
     @classmethod
     @overload
@@ -33,7 +40,8 @@ class BaseModel(pydantic.BaseModel):
         cls,
         response: requests.Response,
         e621api: "E621",
-        expect: Type[List[Any]] = dict,  # type: ignore
+        *,
+        expect: Type[List[Any]],
     ) -> List[Self]:
         ...
 

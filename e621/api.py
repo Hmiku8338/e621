@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from . import endpoints
 from .session import ApiKey, SimpleSession, Username
@@ -37,6 +37,7 @@ class E621:
         client_name: str = "e621-py",
         client_version: str = "0.0.0",
         timeout: int = 10,
+        extra_params: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.timeout = timeout
         self.session = SimpleSession(self.BASE_URL, timeout, auth, client_name, client_version)
@@ -44,6 +45,8 @@ class E621:
             self.username, self.api_key = auth
         else:
             self.username, self.api_key = None, None
+        if extra_params is not None:
+            self.session.params = extra_params
 
         self.posts = endpoints.Posts(self)
         self.favorites = endpoints.Favorites(self)
