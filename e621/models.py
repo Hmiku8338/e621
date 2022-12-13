@@ -267,7 +267,6 @@ class Artist(BaseModel):
     group_name: str
     linked_user_id: Optional[int]
     created_at: str
-    is_banned: bool
     creator_id: int
     is_locked: bool
     notes: Optional[str]
