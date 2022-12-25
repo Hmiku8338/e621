@@ -21,6 +21,7 @@ from typing import (
 from backports.cached_property import cached_property
 from typing_extensions import Literal, ParamSpec, TypeAlias
 
+from e621.response import Response
 from e621.util import camel_to_snake
 
 from .base_model import BaseModel
@@ -39,6 +40,9 @@ from .models import (
     Post,
     PostApproval,
     PostFlag,
+)
+from .models import Posts as PostsModel
+from .models import (
     PostSet,
     PostVersion,
     Tag,
@@ -102,7 +106,7 @@ class BaseEndpoint(Generic[Model]):
         for method_name in generate:
             setattr(cls, method_name, _generate_endpoint_method(cls, getattr(cls, method_name)))
 
-    def _default_get(self, identifier: Any, **kwargs: Any) -> Model:
+    def _default_get(self, identifier: Any, **kwargs: Any) -> Response[Model]:
         return self._model.from_response(self._api.session.get(f"{self._url}/{identifier}", **kwargs), self._api)
 
     def _default_search(
@@ -168,8 +172,8 @@ class BaseEndpoint(Generic[Model]):
 
 
 class EmptySearcher(BaseEndpoint[Model]):
-    _model = BaseModel # type: ignore
-    
+    _model = BaseModel  # type: ignore
+
     def search(self, limit: Optional[int] = None, page: int = 1, ignore_pagination: bool = False) -> List[Model]:
         return self._default_search({}, limit, page, ignore_pagination)
 
@@ -193,16 +197,17 @@ def _generate_endpoint_method(cls: Type[BaseEndpoint], method: Callable[_P, _T])
 
 class Posts(BaseEndpoint[Post], generate=["update"]):
     _model = Post
+    _paginated_model = PostsModel
 
     @overload
-    def get(self, post_id: int) -> Post:
+    def get(self, post_id: int) -> Response[Post]:
         pass
 
     @overload
-    def get(self, post_id: List[int]) -> List[Post]:
+    def get(self, post_id: List[int]) -> Response[PostsModel]:
         pass
 
-    def get(self, post_id: Union[int, List[int]]) -> Union[Post, List[Post]]:
+    def get(self, post_id: Union[int, List[int]]):
         if isinstance(post_id, int):
             return self._default_get(post_id)
         else:
@@ -239,7 +244,7 @@ class Posts(BaseEndpoint[Post], generate=["update"]):
         referer_url: Optional[HttpUrl] = None,
         md5_confirmation: Optional[str] = None,
         as_pending: bool = False,
-    ) -> Post:
+    ) -> Response[Post]:
         if isinstance(tag_string, list):
             tag_string = " ".join(tag_string)
         params = {
@@ -262,8 +267,7 @@ class Posts(BaseEndpoint[Post], generate=["update"]):
             files["upload[file]"] = file
         try:
             r = self._api.session.post("posts", params=params, files=files)
-            post = self.get(r.json()["post_id"])
-            return post
+            return self.get(r.json()["post_id"])
         finally:
             if openfile is not None:
                 openfile.close()
