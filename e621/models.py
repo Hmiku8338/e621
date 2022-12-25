@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Set, Union
 
 from backports.cached_property import cached_property
 from pydantic import Field
@@ -414,27 +414,27 @@ class Post(BaseModel):
     file_size: Optional[int]
     preview: Optional[Preview]
     sample: Optional[Sample]
-    score: Score | None | str
-    tags: Tags | None
-    locked_tags: List[str] | None
+    score: Union[Score, None, str]
+    tags: Optional[Tags]
+    locked_tags: Optional[List[str]]
     tag_string_general: Optional[str]
     tag_string_character: Optional[str]
     tag_string_copyright: Optional[str]
     tag_string_artist: Optional[str]
     tag_string_meta: Optional[str]
-    change_seq: int | None
-    flags: Flags | None
+    change_seq: Optional[int]
+    flags: Optional[Flags]
     rating: str
-    fav_count: int | None
-    sources: List[str] | None
-    pools: List[int] | None
-    relationships: Relationships | None
+    fav_count: Optional[int]
+    sources: Optional[List[str]]
+    pools: Optional[List[int]]
+    relationships: Optional[Relationships]
     approver_id: Optional[int]
     uploader_id: int
-    description: str | None
-    comment_count: int | None
-    is_favorited: bool | None
-    has_notes: bool | None
+    description: Optional[str]
+    comment_count: Optional[int]
+    is_favorited: Optional[bool]
+    has_notes: Optional[bool]
     duration: Optional[float]
 
     @cached_property
@@ -508,9 +508,9 @@ class Pool(BaseModel, _PostsGetterMixin):
     updated_at: Optional[str]
     creator_id: int
     description: str
-    is_active: bool | None
+    is_active: Optional[bool]
     category: str
-    is_deleted: bool | None
+    is_deleted: Optional[bool]
     post_ids: List[int]
     creator_name: str
     post_count: int

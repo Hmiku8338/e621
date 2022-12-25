@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e621-stable"
-version = "1.0.3"
+version = "1.0.4"
 description = "e621.net API wrapper written in Python"
 packages = [{ include = "e621" }]
 authors = [
